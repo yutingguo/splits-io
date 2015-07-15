@@ -13,18 +13,23 @@ class Run < ActiveRecord::Base
 
   after_create :refresh_game
   after_destroy do |run|
-    if run.run_file.present? && run.run_file.runs.where.not(id: run).empty?
+    if run.run_file.runs.where.not(id: run).empty?
       run.run_file.destroy
+    end
+    if run.category.present? && run.category.runs.empty?
+      run.category.destroy
     end
   end
 
   @parse_cache = nil
 
-  validates :run_file, presence: true
-  validates_with RunValidator
-
   before_save :populate_category
   before_save :set_name
+
+  after_save :destroy_empty_old_category
+
+  validates :run_file, presence: true
+  validates_with RunValidator
 
   scope :by_game, ->(game) { joins(:category).where(categories: {game_id: game}) }
   scope :by_category, ->(category) { where(category: category) }
@@ -48,6 +53,11 @@ class Run < ActiveRecord::Base
     def find36(id)
       find10(id.to_i(36))
     end
+  end
+
+  def write_attribute(attr_name, value)
+    attribute_changed(attr_name, read_attribute(attr_name), value)
+    super
   end
 
   alias_method :id10, :id
@@ -180,6 +190,23 @@ class Run < ActiveRecord::Base
   def set_name
     if [category, game].all? { |i| i.try(:name).present? }
       self.name = "#{category.game.name} #{category.name}"
+    end
+  end
+
+  private
+
+  def attribute_changed(attr_name, old_value, new_value)
+    if attr_name.to_s == 'category_id'
+      if old_value.present?
+        puts "#{attr_name}: #{old_value} -> #{new_value}"
+        @old_category_id = old_value.to_i
+      end
+    end
+  end
+
+  def destroy_empty_old_category
+    if @old_category_id.present?
+      Category.find_by(id: @old_category_id).try(:destroy_if_empty_except, self)
     end
   end
 end

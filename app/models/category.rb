@@ -37,4 +37,12 @@ class Category < ActiveRecord::Base
   def popular?
     runs.count * 10 >= game.runs.count
   end
+
+  def destroy_if_empty
+    destroy_if_empty_except(nil)
+  end
+
+  def destroy_if_empty_except(run)
+    destroy if runs.where.not(id: run).empty?
+  end
 end
