@@ -56,7 +56,11 @@ SplitsIO::Application.routes.draw do
     end
   end
 
-  resources :tools, only: [:index]
+  resources :tools, only: [:index] do
+    collection do
+      get :combiner, to: 'tools/combiner#show'
+    end
+  end
   resources :settings, only: [:index]
 
   get    '/runs',            to: redirect('/'), as: :runs

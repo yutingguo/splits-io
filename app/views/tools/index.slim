@@ -3,8 +3,8 @@
   h2 tools
 article
   h4 Twitch panel builder
-  p This will assemble your PBs into a Markdown table for use in a Twitch panel (or elsewhere). You should be able to
-    copy+paste the output into a panel with no additional editing on your part.
+  p Assemble your PBs into a Markdown table for use in a Twitch panel (or elsewhere). You should be able to copy+paste
+    the output into a panel with no additional editing on your part.
   - if current_user.present?
     p
       = link_to 'Export PBs for use in Twitch', user_panels_path(current_user), class: 'btn btn-primary', target: :_blank
@@ -18,6 +18,14 @@ article
   - else
     p
       button.btn.btn-default.disabled You need to be signed in
+article
+  h4 Lossless splits combiner
+  p Have more splits than other runners in your category, and want to reduce them without losing the combined splits'
+    histories? This tool will let you combine any contiguous group of splits into one split without losing split
+    histories. The old splits' histories are summed per-run and written into the new split's history. Missed splits are
+    handled properly as well.
+  - if current_user.present?
+    p = link_to 'Combaticons combine!', new_combiner_path, class: 'btn btn-primary'
 article.danger
   h4 Delete your account
   p If you like, you can permanently delete your account on splits i/o. You can recreate it later by signing in with
