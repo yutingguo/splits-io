@@ -4,10 +4,10 @@ class Users::PbsController < ApplicationController
   before_action :set_category, only: [:show]
 
   def show
-    if @user.gold_patron?
+    if @user.permalink_redirectors? || @game.permalink_redirectors?
       redirect_to run_path(@user.pb_for(@category))
     else
-      redirect_to user_path(@user), alert: 'Redirectors are not enabled for this account.'
+      redirect_to user_path(@user), alert: 'Redirectors are not enabled for this account, game, or Twitch team.'
     end
   end
 

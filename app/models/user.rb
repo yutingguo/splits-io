@@ -128,4 +128,70 @@ class User < ApplicationRecord
 
     p['pledge_cents'] >= 600
   end
+
+  def team_player_patron?
+    p = patreon_info
+    if p.nil?
+      return false
+    end
+
+    if p['pledge_cents'].nil?
+      return false
+    end
+
+    p['pledge_cents'] >= 1000
+  end
+
+  def community_member_patron?
+    p = patreon_info
+    if p.nil?
+      return false
+    end
+
+    if p['pledge_cents'].nil?
+      return false
+    end
+
+    p['pledge_cents'] >= 1200
+  end
+
+  def permalink_redirectors?
+    gold_patron? || teammate_is_gold_patron?
+  end
+
+  def teammate_is_gold_patron?
+    key = {user_id: "#{id}"}
+    attrs = 'user_id'
+
+    options = {
+      key: key,
+      projection_expression: attrs
+    }
+
+    resp = $dynamodb_user_teams.get_item(options)
+
+    if resp.item.nil?
+      return false
+    end
+
+    return true
+  end
+
+  def gold_patron_teammate
+    key = {user_id: "#{user_id}"}
+    attrs = 'user_id'
+
+    options = {
+      key: key,
+      projection_expression: attrs
+    }
+
+    resp = $dynamodb_user_teams.get_item(options)
+
+    if resp.item.nil?
+      return nil
+    end
+
+    return User.find(resp.item['user_id'])
+  end
 end

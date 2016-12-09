@@ -75,6 +75,48 @@ class Game < ApplicationRecord
     end
   end
 
+  def permalink_redirectors?
+    key = {game_id: "#{id}"}
+    attrs = 'game_id'
+
+    options = {
+      key: key,
+      projection_expression: attrs
+    }
+
+    resp = $dynamodb_games_with_permalink_redirectors.get_item(options)
+
+    if resp.item.nil?
+      return false
+    end
+
+    return true
+  end
+
+  def enable_permalink_redirectors
+    game = {
+      'game_id' => "#{id}",
+      'has_permalink_redirectors' => true,
+
+      'created_at' => created_at.to_i,
+      'updated_at' => Time.now.to_i
+    }
+
+    $dynamodb_games.put_item(item: game)
+  end
+
+  def disable_permalink_redirectors
+    game = {
+      'game_id' => "#{id}",
+      'has_permalink_redirectors' => false,
+
+      'created_at' => created_at.to_i,
+      'updated_at' => Time.now.to_i
+    }
+
+    $dynamodb_games.put_item(item: game)
+  end
+
   private
 
   def create_initial_alias

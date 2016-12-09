@@ -21,3 +21,11 @@
 				a> href='/auth/patreon/unlink' (unlink)
 				- if current_user.gold_patron?
 					a href=tools_path (see my permalink redirectors)
+        - if current_user.community_member_patron?
+          p
+            span You're a Community Member level patron, so your choice of speedgame will have
+            a href=tools_path permalink redirectors
+            span enabled for all runners! (for that game)
+          = form_for current_user, remote: true, url: user_path(current_user) do |f|
+            p = f.collection_select(:game, @user.games.shortnamed.order(:name), :shortname, :name, {selected: @run.game.try(:shortname), include_blank: true})
+            p = f.submit 'Save', class: 'btn btn-default'

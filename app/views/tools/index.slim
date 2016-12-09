@@ -1,11 +1,16 @@
 - title "tools"
 - content_for(:header)
 	h2 tools
-- if current_user.present? && current_user.gold_patron?
+- if current_user.present? && current_user.permalink_redirectors?
 	article
 		h4 Permalink redirectors
-		p Thanks for being a patron! You get access to permalink redirectors, which are static links that will always
-			redirect to your current PB for a given game and category. Here they are:
+    - if current_user.gold_patron?
+      p Thanks for being a patron! You get access to permalink redirectors, which are static links that will always
+        redirect to your current PB for a given game and category. Here they are:
+    - elsif current_user.teammate_is_gold_patron?
+      p Your teammate #{current_user.gold_patron_teammate} is a Splits I/O patron, so you get access to permalink
+        redirectors! These are static links that will always (as long as your teammate remains a patron) redirect to
+        your current PB for any given game and category. Here they are:
 		table.table
 			th Game
 			th Category
