@@ -53,7 +53,7 @@ module DynamoDBRun
       parse_result = nil
 
       Run.programs.each do |timer|
-        parse_result = timer::Parser.new.parse(file, fast: true)
+        parse_result = timer::Parser.new.parse(file, fast: false)
 
         if parse_result.present?
           timer_used = timer.to_sym
@@ -74,6 +74,7 @@ module DynamoDBRun
       end
 
       write_segments_to_dynamodb(segments)
+      write_segment_histories_to_dynamodb(segments)
 
       run = {
         'id' => id36,
@@ -103,7 +104,7 @@ module DynamoDBRun
         marshal_segment_into_dynamodb_format(segment, i)
       end
 
-      # We can write at most 25 items to DynamoDB in parallel
+      # DynamoDB supports at most 25 parallel writes
       marshalled_segments.each_slice(25) do |segment_chunk|
         $dynamodb_client.batch_write_item(
           request_items: {'segments' => segment_chunk}
@@ -111,7 +112,19 @@ module DynamoDBRun
       end
     end
 
-    def write_segment_history_to_dynamodb(segments)
+    def write_segment_histories_to_dynamodb(segments)
+      marshalled_segment_histories = segments.map.with_index do |segment, i|
+        marshal_segment_histories_into_dynamodb_format(segment, i)
+      end
+
+      marshalled_segment_histories.flatten!
+
+      # DynamoDB supports at most 25 parallel writes
+      marshalled_segment_histories.each_slice(25) do |segment_history_chunk|
+        $dynamodb_client.batch_write_item(
+          request_items: {'segment_histories' => segment_history_chunk}
+        )
+      end
     end
 
     def marshal_segment_into_dynamodb_format(segment, order)
@@ -132,6 +145,27 @@ module DynamoDBRun
           }
         }
       }
+    end
+
+    def marshal_segment_histories_into_dynamodb_format(segment, order)
+      histories = []
+      segment.indexed_history.each do |hist|
+        attempt_number = hist[0].to_i
+        attempt_duration = hist[1]
+        h = {
+          put_request: {
+            item: {
+              'segment_id' => segment.id,
+              'attempt_number' => attempt_number,
+              'run_id' => id36,
+              'duration_seconds' => attempt_duration
+            }
+          }
+        }
+        histories << h
+      end
+
+      return histories
     end
   end
 end
