@@ -5,7 +5,7 @@ module CompletedRun
 
   included do
     def splits
-      parse[:splits] || []
+      dynamodb_segments || []
     end
 
     def shortest_segment
@@ -27,7 +27,7 @@ module CompletedRun
     end
 
     def history
-      parse(fast: false)[:history] || []
+      dynamodb_history
     end
 
     def best_known?

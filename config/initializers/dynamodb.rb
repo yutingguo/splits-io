@@ -34,6 +34,36 @@ if !$dynamodb_client.list_tables.table_names.include?('splits')
   )
 end
 
+if !$dynamodb_client.list_tables.table_names.include?('run_histories')
+  $dynamodb_client.create_table(
+    table_name: 'run_histories',
+    key_schema: [
+      {
+        attribute_name: 'run_id',
+        key_type: 'HASH'
+      },
+      {
+        attribute_name: 'attempt_number',
+        key_type: 'RANGE'
+      }
+    ],
+    attribute_definitions: [
+      {
+        attribute_name: 'run_id',
+        attribute_type: 'S'
+      },
+      {
+        attribute_name: 'attempt_number',
+        attribute_type: 'N'
+      }
+    ],
+    provisioned_throughput: {
+      read_capacity_units: 5,
+      write_capacity_units: 5
+    }
+  )
+end
+
 if !$dynamodb_client.list_tables.table_names.include?('users')
   $dynamodb_client.create_table(
     table_name: 'users',
@@ -139,6 +169,7 @@ if !$dynamodb_client.list_tables.table_names.include?('segment_histories')
 end
 
 $dynamodb_splits = Aws::DynamoDB::Table.new('splits', client: $dynamodb_client)
+$dynamodb_run_histories = Aws::DynamoDB::Table.new('run_histories', client: $dynamodb_client)
 $dynamodb_users = Aws::DynamoDB::Table.new('users', client: $dynamodb_client)
 $dynamodb_patreon_users = Aws::DynamoDB::Table.new('patreon_users', client: $dynamodb_client)
 $dynamodb_segments = Aws::DynamoDB::Table.new('segments', client: $dynamodb_client)

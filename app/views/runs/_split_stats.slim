@@ -15,18 +15,19 @@ table.table.table-striped
         span 99th percentile
         small.tip-html< title="99% of this segment's times are faster than this" = "(?)"
   tbody
-    - @raw_splits.each_with_index do |split, index|
-      - if split.history.nil?
+    - @run.dynamodb_segments.each_with_index do |segment, index|
+      - history = segment.dynamodb_history
+      - if history.nil?
         tr
           td.align-right= index + 1
-          td.align-left= split.name.present? ? split.name : '-'
+          td.align-left= segment.name.present? ? segment.name : '-'
           td.align-right colspan=99
             i no segment history available
       - else
-        - unskipped_history = split.history.reject { |t| t == 0 }
+        - unskipped_history = history.map { |h| h['duration_seconds'] }.reject { |t| t == 0 }
         tr
           td.align-right= index + 1
-          td.align-left= split.name.present? ? split.name : '-'
+          td.align-left= segment.name.present? ? segment.name : '-'
           td.align-right.time.needs-formatting class=('short' if short)
             = unskipped_history.mean
           td.align-right.time.needs-formatting class=('short' if short)

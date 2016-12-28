@@ -48,6 +48,20 @@ module DynamoDBRun
       return marshalled_segments
     end
 
+    def dynamodb_history
+      attrs = 'run_id, attempt_number, duration_seconds'
+
+      resp = $dynamodb_run_histories.query(
+        key_condition_expression: 'run_id = :run_id',
+        expression_attribute_values: {
+          ':run_id' => id36
+        },
+        projection_expression: attrs
+      )
+
+      return resp.items
+    end
+
     def parse_into_dynamodb
       timer_used = nil
       parse_result = nil
@@ -73,6 +87,7 @@ module DynamoDBRun
         segment.id = SecureRandom.uuid
       end
 
+      write_run_histories_to_dynamodb(parse_result[:history])
       write_segments_to_dynamodb(segments)
       write_segment_histories_to_dynamodb(segments)
 
@@ -97,6 +112,19 @@ module DynamoDBRun
         sum_of_best: run['sum_of_best']
       )
       save
+    end
+
+    def write_run_histories_to_dynamodb(histories)
+      marshalled_histories = histories.map.with_index do |history, i|
+        marshal_history_into_dynamodb_format(history, i)
+      end
+
+      # DynamoDB supports at most 25 parallel writes
+      marshalled_histories.each_slice(25) do |history_chunk|
+        $dynamodb_client.batch_write_item(
+          request_items: {'run_histories' => history_chunk}
+        )
+      end
     end
 
     def write_segments_to_dynamodb(segments)
@@ -125,6 +153,18 @@ module DynamoDBRun
           request_items: {'segment_histories' => segment_history_chunk}
         )
       end
+    end
+
+    def marshal_history_into_dynamodb_format(history, order)
+      {
+        put_request: {
+          item: {
+            'run_id' => id36,
+            'attempt_number' => order,
+            'duration_seconds' => history
+          }
+        }
+      }
     end
 
     def marshal_segment_into_dynamodb_format(segment, order)

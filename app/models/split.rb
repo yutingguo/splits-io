@@ -52,4 +52,18 @@ class Split
       skipped: skipped,
     }.compact
   end
+
+  def dynamodb_history
+    attrs = 'segment_id, attempt_number, duration_seconds'
+
+    resp = $dynamodb_segment_histories.query(
+      key_condition_expression: 'segment_id = :segment_id',
+      expression_attribute_values: {
+        ':segment_id' => id,
+      },
+      projection_expression: attrs
+    )
+
+    resp.items
+  end
 end
