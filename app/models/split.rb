@@ -1,7 +1,8 @@
 class Split
-  attr_accessor :name, :duration, :start_time, :finish_time, :best, :history, :indexed_history, :gold, :skipped, :reduced
+  attr_accessor :id, :name, :duration, :start_time, :finish_time, :best, :history, :indexed_history, :gold, :skipped, :reduced
 
   def initialize(h = {})
+    @id = h[:id]
     @name = h[:name]
     @duration = h[:duration]
     @start_time = h[:start_time]
@@ -28,6 +29,7 @@ class Split
 
   def to_h
     {
+      id: id,
       name: name,
       duration: duration,
       start_time: start_time,
@@ -40,6 +42,7 @@ class Split
 
   def serializable_hash
     {
+      id: id,
       name: name,
       duration: duration,
       start_time: start_time,
