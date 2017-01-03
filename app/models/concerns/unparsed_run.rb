@@ -5,9 +5,10 @@ module UnparsedRun
 
   included do
     def parses?(fast: true, convert: false)
-      parse(fast: fast, convert: convert).present?
+      dynamodb_info.present? || parse(fast: fast, convert: convert).present?
     end
 
+    # Deprecated; use Run#dynamodb_info, Run#dynamodb_segments, Run#dynamodb_history, and Split#dynamodb_history instead
     def parse(fast: true, convert: false)
       return @parse_cache[fast] if @parse_cache.try(:[], fast).present?
       return @parse_cache[false] if @parse_cache.try(:[], false).present?

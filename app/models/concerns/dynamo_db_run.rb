@@ -14,19 +14,31 @@ module DynamoDBRun
       }
 
       resp = $dynamodb_splits.get_item(options)
-      resp.item
+      info = resp.item
+
+      if info.present?
+        info['attempts'] = info['attempts'].to_i
+      end
+
+      return info
     end
 
     def dynamodb_segments
       attrs = 'segment_number, id, title, duration_seconds, start_seconds, end_seconds, is_skipped, is_reduced, is_gold, gold_duration_seconds'
-
-      resp = $dynamodb_segments.query(
+      query = {
         key_condition_expression: 'run_id = :run_id',
         expression_attribute_values: {
           ':run_id' => id36
         },
         projection_expression: attrs
-      )
+      }
+
+      resp = $dynamodb_segments.query(query)
+
+      if resp.items.length == 0
+        parse_into_dynamodb
+        resp = $dynamodb_segments.query(query)
+      end
 
       marshalled_segments = []
 
@@ -34,10 +46,10 @@ module DynamoDBRun
         s = Split.new
         s.id = segment['id']
         s.name = segment['title']
-        s.duration = segment['duration_seconds']
-        s.start_time = segment['start_seconds']
-        s.finish_time = segment['end_seconds']
-        s.best = segment['gold_duration']
+        s.duration = segment['duration_seconds'].to_f
+        s.start_time = segment['start_seconds'].to_f
+        s.finish_time = segment['end_seconds'].to_f
+        s.best = segment['gold_duration_seconds'].to_f
         s.gold = segment['is_gold']
         s.skipped = segment['is_skipped']
         s.reduced = segment['is_reduced']
@@ -59,12 +71,23 @@ module DynamoDBRun
         projection_expression: attrs
       )
 
-      return resp.items
+      attempts = resp.items
+
+      attempts.each do |attempt|
+        attempt['attempt_number'] = attempt['attempt_number'].to_i
+        attempt['duration_seconds'] = attempt['duration_seconds'].to_f
+      end
+
+      return attempts
     end
 
     def parse_into_dynamodb
       timer_used = nil
       parse_result = nil
+
+      if file.nil?
+        return false
+      end
 
       Run.programs.each do |timer|
         parse_result = timer::Parser.new.parse(file, fast: false)
@@ -155,18 +178,6 @@ module DynamoDBRun
       end
     end
 
-    def marshal_history_into_dynamodb_format(history, order)
-      {
-        put_request: {
-          item: {
-            'run_id' => id36,
-            'attempt_number' => order,
-            'duration_seconds' => history
-          }
-        }
-      }
-    end
-
     def marshal_segment_into_dynamodb_format(segment, order)
       {
         put_request: {
@@ -187,7 +198,23 @@ module DynamoDBRun
       }
     end
 
+    def marshal_history_into_dynamodb_format(history, order)
+      {
+        put_request: {
+          item: {
+            'run_id' => id36,
+            'attempt_number' => order,
+            'duration_seconds' => history
+          }
+        }
+      }
+    end
+
     def marshal_segment_histories_into_dynamodb_format(segment, order)
+      if segment.indexed_history.nil?
+        return []
+      end
+
       histories = []
       segment.indexed_history.each do |hist|
         attempt_number = hist[0].to_i

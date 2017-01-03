@@ -64,6 +64,7 @@ module LiveSplit
           k['name'] == 'Personal Best'
         end[0]['RealTime'].try(:[], 0) || '00:00:00.00')
         split.duration = [0, split.finish_time - run[:time]].max
+        split.start_time = split.finish_time - split.duration
 
         split.best = duration_in_seconds_of(segment['BestSegmentTime'][0]['RealTime'].try(:[], 0))
         split.gold = split.duration > 0 && split.duration.round(5) <= split.best.try(:round, 5)
@@ -113,6 +114,7 @@ module LiveSplit
           k['name'] == 'Personal Best'
         end[0]['RealTime'].try(:[], 0) || '00:00:00.00')
         split.duration = [0, split.finish_time - run[:time]].max
+        split.start_time = split.finish_time - split.duration
 
         split.best = duration_in_seconds_of(segment['BestSegmentTime'][0]['RealTime'].try(:[], 0))
         split.gold = split.duration > 0 && split.duration.round(5) <= split.best.try(:round, 5)
@@ -157,6 +159,7 @@ module LiveSplit
         end[0]['RealTime'].try(:[], 0) || '00:00:00.00')
         split.duration = split.finish_time - run[:time]
         split.duration = 0 if split.duration < 0
+        split.start_time = split.finish_time - split.duration
 
         best_segment = segment['BestSegmentTime'][0]['RealTime'].try(:[], 0)
         split.best = duration_in_seconds_of(best_segment)
@@ -199,6 +202,7 @@ module LiveSplit
           split.best = duration_in_seconds_of(best_segment)
           split.gold = split.duration > 0 && split.duration.round(5) == split.best.try(:round, 5)
           split.skipped = split.duration == 0
+          split.start_time = split.finish_time - split.duration
 
           split.history = fast ? nil : segment['SegmentHistory'][0]['Time'].try do |times|
             times.map { |time| duration_in_seconds_of(time['content'].strip) }
@@ -241,6 +245,7 @@ module LiveSplit
           split.best = duration_in_seconds_of(segment['BestSegmentTime'][0])
           split.gold = split.duration > 0 && split.duration.round(5) == split.best.try(:round, 5)
           split.skipped = split.duration == 0
+          split.start_time = split.finish_time - split.duration
 
           split.history = fast ? nil : segment['SegmentHistory'][0]['Time'].try do |times|
             times.map { |time| duration_in_seconds_of(time['content'].strip) }

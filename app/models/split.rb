@@ -64,6 +64,13 @@ class Split
       projection_expression: attrs
     )
 
-    resp.items
+    attempts = resp.items
+
+    attempts.each do |attempt|
+      attempt['attempt_number'] = attempt['attempt_number'].to_i
+      attempt['duration_seconds'] = attempt['duration_seconds'].to_f
+    end
+
+    return attempts
   end
 end
