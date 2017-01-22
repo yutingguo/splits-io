@@ -22,17 +22,19 @@ module UnparsedRun
             resp = dynamodb_info
           end
 
-          if resp.present?
-            return {
-              id: resp['id'],
-              timer: resp['timer'],
-              attempts: resp['attempts'],
-              srdc_id: resp['srdc_id'],
-              duration: resp['duration_in_seconds'],
-              sum_of_best: resp['sum_of_best'],
-              splits: dynamodb_segments,
-            }.merge(resp)
+          if resp.nil?
+            raise "Can't parse run"
           end
+
+          return {
+            id: resp['id'],
+            timer: resp['timer'],
+            attempts: resp['attempts'],
+            srdc_id: resp['srdc_id'],
+            duration: resp['duration_in_seconds'],
+            sum_of_best: resp['sum_of_best'],
+            splits: dynamodb_segments,
+          }.merge(resp)
         end
       end
 
@@ -49,44 +51,15 @@ module UnparsedRun
           srdc_id: srdc_id || parse_result[:srdc_id].presence,
           time: parse_result[:splits].map { |split| split.duration }.sum.to_f,
           sum_of_best: parse_result[:splits].map.all? do |split|
-          split.best.present?
-        end && parse_result[:splits].map do |split|
-          split.best
-        end.sum.to_f
+            split.best.present?
+          end && parse_result[:splits].map do |split|
+            split.best
+          end.sum.to_f
         )
 
-        if convert
-          @convert_cache = parse_result
-        else
-          populate_category(parse_result[:game], parse_result[:category])
-          save
-        end
+        @convert_cache = parse_result
+        @segments_cache = parse_result[:splits]
 
-        @parse_cache = (@parse_cache || {}).merge(fast => parse_result)
-
-        if !fast && !convert
-          ddb_request = {
-            request_items: {
-              "segment_histories" => [
-                {
-                  put_request: {
-                    item: {
-                      'segment_id' => ''
-                    }
-                  }
-                }
-              ]
-            }
-          }
-          segment_histories = parse_result[:splits].map do |segment|
-            histories = {}
-            (1..parse_result[:attempts]).each do |attempt_no|
-              attempt_number = attempt_no + 1
-              h = segment.indexed_history[attempt_number.to_s]
-              histories[attempt_number] = h
-            end
-          end
-        end
         return parse_result
       end
 

@@ -84,6 +84,11 @@ class Run < ApplicationRecord
   end
 
   def timer
+    p = read_attribute(:program)
+    if p.present?
+      return p
+    end
+
     r = dynamodb_info
     if r.nil?
       parse_into_dynamodb

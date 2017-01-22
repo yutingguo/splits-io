@@ -120,8 +120,16 @@ module LiveSplit
         split.gold = split.duration > 0 && split.duration.round(5) <= split.best.try(:round, 5)
         split.skipped = split.duration == 0
 
-        split.history = fast ? nil : segment['SegmentHistory'][0]['Time'].try do |times|
-          times.map { |time| duration_in_seconds_of(time['RealTime'].try(:[], 0).try(:strip)) }
+        split.history = []
+        split.indexed_history = {}
+
+        if !fast
+          split.history = segment['SegmentHistory'][0]['Time']
+          split.history.map! do |time|
+            t = time['RealTime'].nil? ? 0 : duration_in_seconds_of(time['RealTime'][0].try(:strip))
+            split.indexed_history[time['id']] = t
+            t
+          end
         end
 
         run[:time] += split.duration if split.duration.present?
@@ -166,8 +174,15 @@ module LiveSplit
         split.gold = split.duration > 0 && split.duration.round(5) <= split.best.try(:round, 5)
         split.skipped = split.duration == 0
 
-        split.history = fast ? nil : segment['SegmentHistory'][0]['Time'].try do |times|
-          times.map { |time| duration_in_seconds_of(time['RealTime'].try(:[], 0).try(:strip)) }
+        split.history = []
+        split.indexed_history = {}
+
+        if !fast
+          split.history = segment['SegmentHistory'][0]['Time']
+          split.history.map! do |time|
+            t = time['RealTime'].nil? ? 0 : duration_in_seconds_of(time['RealTime'].try(:[], 0).try(:strip))
+            split.indexed_history[time['id']] = t
+          end
         end
 
         run[:time] += split.duration if split.duration.present?

@@ -5,7 +5,14 @@ module CompletedRun
 
   included do
     def splits
-      dynamodb_segments || []
+      segments
+    end
+
+    def segments
+      if @segments_cache.nil?
+        @segments_cache = (dynamodb_segments || [])
+      end
+      return @segments_cache
     end
 
     def shortest_segment
