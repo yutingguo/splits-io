@@ -7,3 +7,20 @@ services:
 before_script:
   - psql -c 'create database "splits-io-test";' -U postgres
 
+services:
+  dynamodb:
+    image: tray/dynamodb-local
+    ports:
+      - "8000"
+    command: -inMemory -port 8000
+  test:
+    build:
+      context: .
+      args:
+        BUNDLE_GROUPS: default development test
+    command: bin/rspec
+    links:
+      - dynamodb
+    environment:
+      DYNAMODB_URL: http://dynamodb:8000/
+      RACK_ENV: test
