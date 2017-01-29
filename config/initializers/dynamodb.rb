@@ -6,8 +6,8 @@ options = {
   )
 }
 
-if ENV['AWS_REGION'] == 'local'
-  options.merge!(endpoint: 'http://localhost:8000')
+if ENV['DYNAMODB_URL'].present?
+  options.merge!(endpoint: ENV['DYNAMODB_URL'])
 end
 
 $dynamodb_runs_table_name = 'splits'
